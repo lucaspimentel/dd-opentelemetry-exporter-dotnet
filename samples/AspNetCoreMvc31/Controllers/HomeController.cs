@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Threading.Tasks;
 using AspNetCoreMvc31.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,14 +17,21 @@ namespace AspNetCoreMvc31.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            using (var httpClient = new HttpClient())
+            {
+                HttpResponseMessage response = await httpClient.GetAsync("https://example.org");
+                response.EnsureSuccessStatusCode();
+            }
+
             return View();
         }
 
-        public IActionResult Privacy()
+        [Route("error")]
+        public IActionResult ThrowError()
         {
-            return View();
+            throw new Exception("This is an test.");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
