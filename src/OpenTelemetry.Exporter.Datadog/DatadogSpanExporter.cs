@@ -66,7 +66,7 @@ namespace OpenTelemetry.Exporter.Datadog
                                 OperationName = "web.request",
                                 StartTime = span.StartTimestamp,
                                 Duration = span.EndTimestamp - span.StartTimestamp,
-                                Error = span.Status != Status.Ok,
+                                Error = !span.Status.IsOk
                             };
 
             if (span.Kind != null)
