@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     internal static class Util
     {

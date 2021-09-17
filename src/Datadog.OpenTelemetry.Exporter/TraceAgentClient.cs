@@ -6,28 +6,14 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using MsgPack.Serialization;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     public class TraceAgentClient
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly SerializationContext SerializationContext = new SerializationContext();
-        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
-
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
-
-        static TraceAgentClient()
-        {
-            SerializationContext.ResolveSerializer += (sender, eventArgs) =>
-                                                      {
-                                                          if (eventArgs.TargetType == typeof(SpanModel))
-                                                          {
-                                                              eventArgs.SetSerializer(Serializer);
-                                                          }
-                                                      };
-        }
 
         public TraceAgentClient(Uri baseEndpoint)
         {
@@ -39,7 +25,7 @@ namespace OpenTelemetry.Exporter.Datadog
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion);
         }
 
-        public async Task SendTracesAsync(IEnumerable<SpanModel> spanModels)
+        public async Task SendTracesAsync(IEnumerable<Span> spanModels)
         {
             if (spanModels == null)
             {
@@ -53,7 +39,7 @@ namespace OpenTelemetry.Exporter.Datadog
 
             int traceIdCount = traces.Count;
 
-            using (var content = new MsgPackContent<List<List<SpanModel>>>(traces, SerializationContext))
+            using (var content = new MsgPackContent<List<List<Span>>>(traces, SerializationContext))
             {
                 content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIdCount.ToString(CultureInfo.InvariantCulture));
 

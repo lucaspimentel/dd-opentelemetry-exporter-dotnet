@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Exporter.Datadog;
+using Datadog.OpenTelemetry.Exporter;
 using OpenTelemetry.Trace.Configuration;
 
 namespace AspNetCoreMvc31

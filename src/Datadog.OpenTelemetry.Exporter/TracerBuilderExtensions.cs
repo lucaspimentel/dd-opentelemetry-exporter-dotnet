@@ -2,7 +2,7 @@ using System;
 using OpenTelemetry.Trace.Configuration;
 using OpenTelemetry.Trace.Export;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     /// <summary>
     /// Extension methods to configure the <see cref="DatadogSpanExporter"/>.
@@ -27,15 +27,8 @@ namespace OpenTelemetry.Exporter.Datadog
         /// <returns>The instance of <see cref="TracerBuilder"/> to chain the calls.</returns>
         public static TracerBuilder UseDatadog(this TracerBuilder builder, Action<DatadogExporterOptions> configure)
         {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (configure == null)
-            {
-                throw new ArgumentNullException(nameof(configure));
-            }
+            if (builder == null) { throw new ArgumentNullException(nameof(builder)); }
+            if (configure == null) { throw new ArgumentNullException(nameof(configure)); }
 
             var options = new DatadogExporterOptions();
             configure(options);

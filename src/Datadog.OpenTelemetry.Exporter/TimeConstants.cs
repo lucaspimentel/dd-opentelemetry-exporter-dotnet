@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     internal static class TimeConstants
     {

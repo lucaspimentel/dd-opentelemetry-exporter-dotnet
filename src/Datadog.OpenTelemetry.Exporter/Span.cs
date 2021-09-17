@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
-    public class SpanModel
+    public class Span
     {
         public ulong TraceId { get; set; }
 
@@ -25,8 +25,8 @@ namespace OpenTelemetry.Exporter.Datadog
 
         public bool Error { get; set; }
 
-        public Dictionary<string, string> Tags { get; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Meta { get; } = new();
 
-        public Dictionary<string, double> Metrics { get; } = new Dictionary<string, double>();
+        public Dictionary<string, double> Metrics { get; } = new();
     }
 }

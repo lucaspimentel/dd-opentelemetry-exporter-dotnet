@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Trace.Export;
+using OpenTelemetry;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
-    public class DatadogSpanExporter : SpanExporter, IDisposable
+    public class DatadogSpanExporter : BaseExporter<Activity>, IDisposable
     {
         private readonly DatadogExporterOptions _options;
         private readonly SpanWriter _writer;
@@ -24,6 +22,11 @@ namespace OpenTelemetry.Exporter.Datadog
 
             _defaultServiceName = Assembly.GetEntryAssembly()?.GetName().Name ??
                                   Process.GetCurrentProcess().ProcessName;
+        }
+
+        protected override bool OnShutdown(int timeoutMilliseconds)
+        {
+            return base.OnShutdown(timeoutMilliseconds);
         }
 
         /// <summary>Exports batch of spans asynchronously.</summary>
@@ -47,34 +50,27 @@ namespace OpenTelemetry.Exporter.Datadog
             }
         }
 
-        /// <summary>Shuts down exporter asynchronously.</summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public override async Task ShutdownAsync(CancellationToken cancellationToken)
+        private Span ConvertSpan(Activity activity)
         {
-            await _writer.StopAsync();
-        }
-
-        private SpanModel ConvertSpan(SpanData span)
-        {
-            var spanModel = new SpanModel
+            var spanModel = new Span
                             {
-                                SpanId = Util.ToUInt64(span.Context.SpanId),
-                                TraceId = Util.ToUInt64(span.Context.TraceId),
-                                ParentId = Util.ToUInt64(span.ParentSpanId),
+                                SpanId = Util.ToUInt64(activity.SpanId),
+                                TraceId = Util.ToUInt64(activity.TraceId),
+                                ParentId = Util.ToUInt64(activity.ParentSpanId),
                                 Type = "web",
                                 ServiceName = _defaultServiceName,
                                 OperationName = "web.request",
-                                StartTime = span.StartTimestamp,
-                                Duration = span.EndTimestamp - span.StartTimestamp,
-                                Error = !span.Status.IsOk
+                                StartTime = activity.StartTimestamp,
+                                Duration = activity.EndTimestamp - activity.StartTimestamp,
+                                Error = !activity.Status.IsOk
                             };
 
-            if (span.Kind != null)
+            if (activity.Kind != null)
             {
-                spanModel.Tags["span.kind"] = span.Kind.Value.ToString().ToLowerInvariant();
+                spanModel.Tags["span.kind"] = activity.Kind.Value.ToString().ToLowerInvariant();
             }
 
-            foreach (var attribute in span.Attributes)
+            foreach (var attribute in activity.Attributes)
             {
                 string value = attribute.Value?.ToString();
 
@@ -84,15 +80,15 @@ namespace OpenTelemetry.Exporter.Datadog
                 }
             }
 
-            spanModel.ResourceName = $"{spanModel.Tags["http.method"]} {span.Name}";
+            spanModel.ResourceName = $"{spanModel.Tags["http.method"]} {activity.Name}";
             return spanModel;
         }
 
-        private bool ShouldExport(SpanData span)
+        private bool ShouldExport(Activity activity)
         {
-            foreach (var attr in span.Attributes)
+            foreach ((string key, string? value) in activity.Tags)
             {
-                if (attr.Key == "http.url" && attr.Value != null && attr.Value.ToString().StartsWith(this._options.BaseEndpoint))
+                if (key == "http.url" && value?.StartsWith(_options.BaseEndpoint) == true)
                 {
                     return false;
                 }
@@ -109,6 +105,11 @@ namespace OpenTelemetry.Exporter.Datadog
                     .ContinueWith(_ => { })
                     .Wait();
             }
+        }
+
+        public override ExportResult Export(in Batch<Activity> batch)
+        {
+
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>

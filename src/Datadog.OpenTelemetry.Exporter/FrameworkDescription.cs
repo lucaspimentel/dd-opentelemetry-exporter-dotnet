@@ -1,13 +1,12 @@
 using System;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Win32;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     internal class FrameworkDescription
     {
@@ -15,9 +14,6 @@ namespace OpenTelemetry.Exporter.Datadog
 
         private static readonly Tuple<int, string>[] DotNetFrameworkVersionMapping =
         {
-            // highest known value is 528049
-            Tuple.Create(528050, "4.8+"),
-
             // known min value for each framework version
             Tuple.Create(528040, "4.8"),
             Tuple.Create(461808, "4.7.2"),
@@ -31,7 +27,7 @@ namespace OpenTelemetry.Exporter.Datadog
             Tuple.Create(378389, "4.5"),
         };
 
-        private static readonly Lazy<FrameworkDescription> LazyInstance = new Lazy<FrameworkDescription>(Create, LazyThreadSafetyMode.PublicationOnly);
+        private static readonly Lazy<FrameworkDescription> LazyInstance = new(Create, LazyThreadSafetyMode.PublicationOnly);
 
         private FrameworkDescription(
             string name,
@@ -119,19 +115,19 @@ namespace OpenTelemetry.Exporter.Datadog
 
             return new FrameworkDescription(
                 frameworkName ?? "unknown",
-                GetNetCoreVersion() ?? "unknown",
+                GetNetCoreVersion(),
                 osPlatform ?? "unknown",
                 RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
                 RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant());
         }
 
-        private static string GetNetFrameworkVersion()
+        private static string? GetNetFrameworkVersion()
         {
-            string productVersion = null;
+            string? productVersion = null;
 
             try
             {
-                object registryValue;
+                object? registryValue;
 
                 using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default))
                 using (var subKey = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\"))
@@ -163,7 +159,7 @@ namespace OpenTelemetry.Exporter.Datadog
 
         private static string GetNetCoreVersion()
         {
-            string productVersion = null;
+            string? productVersion = null;
 
             if (Environment.Version.Major == 3 || Environment.Version.Major >= 5)
             {
@@ -209,9 +205,9 @@ namespace OpenTelemetry.Exporter.Datadog
             return productVersion;
         }
 
-        private static string GetVersionFromAssemblyAttributes()
+        private static string? GetVersionFromAssemblyAttributes()
         {
-            string productVersion = null;
+            string? productVersion = null;
 
             try
             {

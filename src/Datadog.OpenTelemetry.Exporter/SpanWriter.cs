@@ -4,20 +4,19 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     public class SpanWriter
     {
         private readonly TraceAgentClient _client;
         private readonly Task _loopTask;
 
-        private ConcurrentBag<SpanModel> _spans = new ConcurrentBag<SpanModel>();
+        private ConcurrentBag<Span> _spans = new();
         private bool _enabled;
 
         public SpanWriter(TraceAgentClient client)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
-
             _enabled = true;
             _loopTask = Task.Run(StartAsync);
         }
@@ -29,7 +28,7 @@ namespace OpenTelemetry.Exporter.Datadog
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
                 // switch the queued spans with a new empty collection
-                ConcurrentBag<SpanModel> spans = Interlocked.Exchange(ref _spans, new ConcurrentBag<SpanModel>());
+                ConcurrentBag<Span> spans = Interlocked.Exchange(ref _spans, new ConcurrentBag<Span>());
 
                 if (!spans.IsEmpty)
                 {
@@ -38,9 +37,9 @@ namespace OpenTelemetry.Exporter.Datadog
             }
         }
 
-        public void Add(IEnumerable<SpanModel> spans)
+        public void Add(IEnumerable<Span> spans)
         {
-            foreach (SpanModel span in spans)
+            foreach (Span span in spans)
             {
                 _spans.Add(span);
             }

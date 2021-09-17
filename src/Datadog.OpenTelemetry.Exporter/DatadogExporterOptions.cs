@@ -1,6 +1,4 @@
-﻿using System.Net.Http;
-
-namespace OpenTelemetry.Exporter.Datadog
+﻿namespace Datadog.OpenTelemetry.Exporter
 {
     public class DatadogExporterOptions
     {

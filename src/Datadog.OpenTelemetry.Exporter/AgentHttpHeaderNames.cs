@@ -1,4 +1,4 @@
-namespace OpenTelemetry.Exporter.Datadog
+namespace Datadog.OpenTelemetry.Exporter
 {
     /// <summary>
     /// Names of HTTP headers that can be used when sending traces to the Trace Agent.
