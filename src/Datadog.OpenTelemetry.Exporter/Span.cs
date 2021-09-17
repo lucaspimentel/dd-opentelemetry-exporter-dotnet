@@ -9,7 +9,7 @@ namespace Datadog.OpenTelemetry.Exporter
 
         public ulong SpanId { get; set; }
 
-        public ulong ParentId { get; set; }
+        public ulong? ParentSpanId { get; set; }
 
         public DateTimeOffset StartTime { get; set; }
 

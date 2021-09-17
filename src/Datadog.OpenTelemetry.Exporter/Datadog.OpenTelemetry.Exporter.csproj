@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net5.0;netcoreapp3.1;net461</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,7 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using MsgPack.Serialization;
+using Datadog.OpenTelemetry.Exporter.MessagePack;
+using MessagePack;
 
 namespace Datadog.OpenTelemetry.Exporter
 {
@@ -15,9 +16,9 @@ namespace Datadog.OpenTelemetry.Exporter
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
-        public TraceAgentClient(Uri baseEndpoint)
+        public TraceAgentClient(string baseEndpoint)
         {
-            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
+            _tracesEndpoint = new Uri(new Uri(baseEndpoint), TracesPath);
 
             _client = new HttpClient();
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
@@ -37,15 +38,13 @@ namespace Datadog.OpenTelemetry.Exporter
                           into g
                           select g.ToList()).ToList();
 
-            int traceIdCount = traces.Count;
+            var serializerOptions = MessagePackSerializerOptions.Standard.WithResolver(SpanFormatterResolver.Instance);
+            byte[] bytes = MessagePackSerializer.Serialize(traces, serializerOptions);
 
-            using (var content = new MsgPackContent<List<List<Span>>>(traces, SerializationContext))
+            using (HttpContent content = new ByteArrayContent(bytes))
             {
-                content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIdCount.ToString(CultureInfo.InvariantCulture));
-
-                HttpResponseMessage responseMessage = await _client.PostAsync(_tracesEndpoint, content)
-                                                                   .ConfigureAwait(false);
-
+                content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
+                HttpResponseMessage responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                 responseMessage.EnsureSuccessStatusCode();
             }
         }

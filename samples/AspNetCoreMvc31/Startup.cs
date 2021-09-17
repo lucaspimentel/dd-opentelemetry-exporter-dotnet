@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Datadog.OpenTelemetry.Exporter;
-using OpenTelemetry.Trace.Configuration;
+using OpenTelemetry.Trace;
 
 namespace AspNetCoreMvc31
 {
@@ -22,12 +22,11 @@ namespace AspNetCoreMvc31
         {
             services.AddControllersWithViews();
 
-            services.AddOpenTelemetry((sp, builder) =>
-                                      {
-                                          builder.UseDatadog()
-                                                 .AddRequestCollector()
-                                                 .AddDependencyCollector();
-                                      });
+            services.AddOpenTelemetryTracing(builder =>
+                                             {
+                                                 builder.AddAspNetCoreInstrumentation()
+                                                        .AddHttpClientInstrumentation();
+                                             });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

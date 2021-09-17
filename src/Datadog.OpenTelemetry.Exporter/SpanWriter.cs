@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,12 +36,9 @@ namespace Datadog.OpenTelemetry.Exporter
             }
         }
 
-        public void Add(IEnumerable<Span> spans)
+        public void Add(Span span)
         {
-            foreach (Span span in spans)
-            {
-                _spans.Add(span);
-            }
+            _spans.Add(span);
         }
 
         public async Task StopAsync()

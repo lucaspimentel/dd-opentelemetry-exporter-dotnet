@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Datadog.OpenTelemetry.Exporter
 {
-    internal static class Util
+    internal static class ConversionHelper
     {
         /// <summary>
         /// Returns the number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.

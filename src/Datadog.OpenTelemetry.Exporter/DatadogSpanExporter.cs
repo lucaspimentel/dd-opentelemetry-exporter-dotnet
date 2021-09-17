@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using OpenTelemetry;
+using OpenTelemetry.Trace;
 
 namespace Datadog.OpenTelemetry.Exporter
 {
-    public class DatadogSpanExporter : BaseExporter<Activity>, IDisposable
+    public sealed class DatadogSpanExporter : BaseExporter<Activity>
     {
         private readonly DatadogExporterOptions _options;
         private readonly SpanWriter _writer;
@@ -17,106 +15,87 @@ namespace Datadog.OpenTelemetry.Exporter
         public DatadogSpanExporter(DatadogExporterOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            var client = new TraceAgentClient(new Uri(options.BaseEndpoint));
+            var client = new TraceAgentClient(options.BaseEndpoint);
             _writer = new SpanWriter(client);
 
-            _defaultServiceName = Assembly.GetEntryAssembly()?.GetName().Name ??
+            _defaultServiceName = options.ServiceName ??
+                                  // TODO: ASP.NET / IIS application name
+                                  Assembly.GetEntryAssembly()?.GetName().Name ??
                                   Process.GetCurrentProcess().ProcessName;
         }
 
+        /*
         protected override bool OnShutdown(int timeoutMilliseconds)
         {
             return base.OnShutdown(timeoutMilliseconds);
         }
+        */
 
-        /// <summary>Exports batch of spans asynchronously.</summary>
-        /// <param name="batch">Batch of spans to export.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Result of export.</returns>
-        public override Task<ExportResult> ExportAsync(IEnumerable<SpanData> batch, CancellationToken cancellationToken)
+        public override ExportResult Export(in Batch<Activity> batch)
         {
+            using var scope = SuppressInstrumentationScope.Begin();
+
             try
             {
-                var spans = batch.Where(ShouldExport)
-                                 .Select(ConvertSpan)
-                                 .ToList();
+                foreach (Activity activity in batch)
+                {
+                    if (ShouldExport(activity))
+                    {
+                        Span span = ConvertToSpan(activity);
+                        _writer.Add(span);
+                    }
+                }
 
-                _writer.Add(spans);
-                return Task.FromResult(ExportResult.Success);
+                return ExportResult.Success;
             }
             catch
             {
-                return Task.FromResult(ExportResult.FailedNotRetryable);
+                return ExportResult.Failure;
             }
         }
 
-        private Span ConvertSpan(Activity activity)
+        private Span ConvertToSpan(Activity activity)
         {
-            var spanModel = new Span
-                            {
-                                SpanId = Util.ToUInt64(activity.SpanId),
-                                TraceId = Util.ToUInt64(activity.TraceId),
-                                ParentId = Util.ToUInt64(activity.ParentSpanId),
-                                Type = "web",
-                                ServiceName = _defaultServiceName,
-                                OperationName = "web.request",
-                                StartTime = activity.StartTimestamp,
-                                Duration = activity.EndTimestamp - activity.StartTimestamp,
-                                Error = !activity.Status.IsOk
-                            };
+            var span = new Span
+                       {
+                           SpanId = ConversionHelper.ToUInt64(activity.SpanId),
+                           TraceId = ConversionHelper.ToUInt64(activity.TraceId),
+                           ParentSpanId = ConversionHelper.ToUInt64(activity.ParentSpanId),
+                           // Type = "custom",
+                           ServiceName = _defaultServiceName,
+                           OperationName = activity.OperationName,
+                           StartTime = activity.StartTimeUtc,
+                           Duration = activity.Duration,
+                           Error = activity.GetStatus() == Status.Error,
+                           Meta =
+                           {
+                               ["span.kind"] = activity.Kind.ToString().ToLowerInvariant()
+                           }
+                       };
 
-            if (activity.Kind != null)
+            foreach (var attribute in activity.Tags)
             {
-                spanModel.Tags["span.kind"] = activity.Kind.Value.ToString().ToLowerInvariant();
-            }
-
-            foreach (var attribute in activity.Attributes)
-            {
-                string value = attribute.Value?.ToString();
-
-                if (!string.IsNullOrEmpty(value))
+                if (attribute.Value != null)
                 {
-                    spanModel.Tags[attribute.Key] = value;
+                    span.Meta[attribute.Key] = attribute.Value;
                 }
             }
 
-            spanModel.ResourceName = $"{spanModel.Tags["http.method"]} {activity.Name}";
-            return spanModel;
+            span.ResourceName = $"{span.Meta["http.method"]} {activity.DisplayName}";
+            return span;
         }
 
         private bool ShouldExport(Activity activity)
         {
-            foreach ((string key, string? value) in activity.Tags)
+            foreach (var tag in activity.Tags)
             {
-                if (key == "http.url" && value?.StartsWith(_options.BaseEndpoint) == true)
+                if (tag.Key == "http.url" && tag.Value?.StartsWith(_options.BaseEndpoint) == true)
                 {
                     return false;
                 }
             }
 
             return true;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                this.ShutdownAsync(CancellationToken.None)
-                    .ContinueWith(_ => { })
-                    .Wait();
-            }
-        }
-
-        public override ExportResult Export(in Batch<Activity> batch)
-        {
-
-        }
-
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }
