@@ -3,12 +3,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Microsoft.Win32;
 
 namespace Datadog.OpenTelemetry.Exporter
 {
-    internal class FrameworkDescription
+    internal static class RuntimeInformationWrapper
     {
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
@@ -27,98 +26,65 @@ namespace Datadog.OpenTelemetry.Exporter
             Tuple.Create(378389, "4.5"),
         };
 
-        private static readonly Lazy<FrameworkDescription> LazyInstance = new(Create, LazyThreadSafetyMode.PublicationOnly);
+        public static string Name { get; private set; } = "unknown";
 
-        private FrameworkDescription(
-            string name,
-            string productVersion,
-            string osPlatform,
-            string osArchitecture,
-            string processArchitecture)
-        {
-            Name = name;
-            ProductVersion = productVersion;
-            OSPlatform = osPlatform;
-            OSArchitecture = osArchitecture;
-            ProcessArchitecture = processArchitecture;
-        }
+        public static string ProductVersion { get; private set; } = "unknown";
 
-        public static FrameworkDescription Instance => LazyInstance.Value;
+        public static string OsPlatform { get; private set; } = "unknown";
 
-        public string Name { get; }
+        public static string OsArchitecture { get; private set; } = "unknown";
 
-        public string ProductVersion { get; }
+        public static string ProcessArchitecture { get; private set; } = "unknown";
 
-        public string OSPlatform { get; }
-
-        public string OSArchitecture { get; }
-
-        public string ProcessArchitecture { get; }
-
-        private static FrameworkDescription Create()
+        static RuntimeInformationWrapper()
         {
             var assemblyName = RootAssembly.GetName();
 
             if (string.Equals(assemblyName.Name, "mscorlib", StringComparison.OrdinalIgnoreCase))
             {
                 // .NET Framework
-                return new FrameworkDescription(
-                    ".NET Framework",
-                    GetNetFrameworkVersion() ?? "unknown",
-                    "Windows",
-                    Environment.Is64BitOperatingSystem ? "x64" : "x86",
-                    Environment.Is64BitProcess ? "x64" : "x86");
+                Name = ".NET Framework";
+                ProductVersion = GetNetFrameworkVersion() ?? "unknown";
+                OsPlatform = "Windows";
+                OsArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
+                ProcessArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
             }
 
             // .NET Core
-            return CreateFromRuntimeInformation();
+            InitializeFromRuntimeInformation();
         }
 
-        public override string ToString()
+        private static void InitializeFromRuntimeInformation()
         {
-            // examples:
-            // .NET Framework 4.8 x86 on Windows x64
-            // .NET Core 3.0.0 x64 on Linux x64
-            return $"{Name} {ProductVersion} {ProcessArchitecture} on {OSPlatform} {OSArchitecture}";
-        }
-
-        private static FrameworkDescription CreateFromRuntimeInformation()
-        {
-            string frameworkName = null;
-            string osPlatform = null;
-
             try
             {
                 // RuntimeInformation.FrameworkDescription returns a string like ".NET Framework 4.7.2" or ".NET Core 2.1",
                 // we want to return everything before the last space
                 string frameworkDescription = RuntimeInformation.FrameworkDescription;
                 int index = frameworkDescription.LastIndexOf(' ');
-                frameworkName = frameworkDescription.Substring(0, index).Trim();
+                Name = frameworkDescription.Substring(0, index).Trim();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Log.ErrorException("Error getting framework name from RuntimeInformation", e);
             }
 
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                osPlatform = "Windows";
+                OsPlatform = "Windows";
             }
-            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                osPlatform = "Linux";
+                OsPlatform = "Linux";
             }
-            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                osPlatform = "MacOS";
+                OsPlatform = "MacOS";
             }
 
-            return new FrameworkDescription(
-                frameworkName ?? "unknown",
-                GetNetCoreVersion(),
-                osPlatform ?? "unknown",
-                RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
-                RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant());
+            ProductVersion = GetNetCoreVersion();
+            OsArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+            ProcessArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         }
 
         private static string? GetNetFrameworkVersion()
@@ -161,7 +127,7 @@ namespace Datadog.OpenTelemetry.Exporter
         {
             string? productVersion = null;
 
-            if (Environment.Version.Major == 3 || Environment.Version.Major >= 5)
+            if (Environment.Version.Major is 3 or >= 5)
             {
                 // Environment.Version returns "4.x" in .NET Core 2.x,
                 // but it is correct since .NET Core 3.0.0
@@ -212,7 +178,7 @@ namespace Datadog.OpenTelemetry.Exporter
             try
             {
                 // if we fail to extract version from assembly path, fall back to the [AssemblyInformationalVersion],
-                var informationalVersionAttribute = (AssemblyInformationalVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
+                var informationalVersionAttribute = (AssemblyInformationalVersionAttribute?)RootAssembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
 
                 // split remove the commit hash from pre-release versions
                 productVersion = informationalVersionAttribute?.InformationalVersion?.Split('+')[0];
@@ -227,7 +193,7 @@ namespace Datadog.OpenTelemetry.Exporter
                 try
                 {
                     // and if that fails, try [AssemblyFileVersion]
-                    var fileVersionAttribute = (AssemblyFileVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
+                    var fileVersionAttribute = (AssemblyFileVersionAttribute?)RootAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
                     productVersion = fileVersionAttribute?.Version;
                 }
                 catch

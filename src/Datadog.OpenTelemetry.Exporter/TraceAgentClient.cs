@@ -22,8 +22,8 @@ namespace Datadog.OpenTelemetry.Exporter
 
             _client = new HttpClient();
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformationWrapper.Name);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, RuntimeInformationWrapper.ProductVersion);
         }
 
         public async Task SendTracesAsync(IEnumerable<Span> spanModels)
