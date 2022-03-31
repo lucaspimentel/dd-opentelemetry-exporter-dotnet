@@ -26,65 +26,46 @@ namespace Datadog.OpenTelemetry.Exporter
             Tuple.Create(378389, "4.5"),
         };
 
-        public static string Name { get; private set; } = "unknown";
+        public static string Name { get; } = GetName();
 
-        public static string ProductVersion { get; private set; } = "unknown";
+        public static string ProductVersion { get; } = GetProductVersion();
 
-        public static string OsPlatform { get; private set; } = "unknown";
+        public static string OsPlatform { get; } = GetOsName();
 
-        public static string OsArchitecture { get; private set; } = "unknown";
+        public static string OsArchitecture { get; } = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
 
-        public static string ProcessArchitecture { get; private set; } = "unknown";
+        public static string ProcessArchitecture { get; } = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
 
-        static RuntimeInformationWrapper()
+        private static string GetName()
         {
-            var assemblyName = RootAssembly.GetName();
-
-            if (string.Equals(assemblyName.Name, "mscorlib", StringComparison.OrdinalIgnoreCase))
-            {
-                // .NET Framework
-                Name = ".NET Framework";
-                ProductVersion = GetNetFrameworkVersion() ?? "unknown";
-                OsPlatform = "Windows";
-                OsArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
-                ProcessArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
-            }
-
-            // .NET Core
-            InitializeFromRuntimeInformation();
+            string frameworkDescription = RuntimeInformation.FrameworkDescription;
+            int index = frameworkDescription.LastIndexOf(' ');
+            return frameworkDescription.Substring(0, index).Trim();
         }
 
-        private static void InitializeFromRuntimeInformation()
+        private static string GetProductVersion()
         {
-            try
-            {
-                // RuntimeInformation.FrameworkDescription returns a string like ".NET Framework 4.7.2" or ".NET Core 2.1",
-                // we want to return everything before the last space
-                string frameworkDescription = RuntimeInformation.FrameworkDescription;
-                int index = frameworkDescription.LastIndexOf(' ');
-                Name = frameworkDescription.Substring(0, index).Trim();
-            }
-            catch (Exception)
-            {
-                // Log.ErrorException("Error getting framework name from RuntimeInformation", e);
-            }
+            return (Name == ".NET Framework" ? GetNetFrameworkVersion() : GetNetCoreVersion()) ?? string.Empty;
+        }
 
+        private static string GetOsName()
+        {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                OsPlatform = "Windows";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                OsPlatform = "Linux";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                OsPlatform = "MacOS";
+                return "Windows";
             }
 
-            ProductVersion = GetNetCoreVersion();
-            OsArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
-            ProcessArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return "Linux";
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return "macOS";
+            }
+
+            return string.Empty;
         }
 
         private static string? GetNetFrameworkVersion()
@@ -136,22 +117,15 @@ namespace Datadog.OpenTelemetry.Exporter
 
             if (productVersion == null)
             {
-                try
-                {
-                    // try to get product version from assembly path
-                    Match match = Regex.Match(
-                        RootAssembly.CodeBase,
-                        @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
-                        RegexOptions.IgnoreCase);
+                // try to get product version from assembly path
+                Match match = Regex.Match(
+                    RootAssembly.CodeBase,
+                    @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
+                    RegexOptions.IgnoreCase);
 
-                    if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
-                    {
-                        productVersion = match.Groups[1].Value;
-                    }
-                }
-                catch (Exception e)
+                if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
                 {
-                    // Log.ErrorException("Error getting .NET Core version from assembly path", e);
+                    productVersion = match.Groups[1].Value;
                 }
             }
 
