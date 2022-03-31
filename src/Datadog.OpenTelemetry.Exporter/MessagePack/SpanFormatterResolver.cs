@@ -13,7 +13,7 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
     {
         public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
 
-        private static readonly IMessagePackFormatter<Span> Formatter = new SpanMessagePackFormatter();
+        private static readonly IMessagePackFormatter<Span> Formatter = new SpanFormatter();
 
         private SpanFormatterResolver()
         {

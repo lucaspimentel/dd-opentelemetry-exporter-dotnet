@@ -12,24 +12,21 @@ using MessagePack.Formatters;
 
 namespace Datadog.OpenTelemetry.Exporter.MessagePack
 {
-    internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
+    internal class SpanFormatter : IMessagePackFormatter<Span>
     {
+        // top-level spans fields
         private static readonly byte[] TraceIdBytes = Encoding.UTF8.GetBytes("trace_id");
         private static readonly byte[] SpanIdBytes = Encoding.UTF8.GetBytes("span_id");
+        private static readonly byte[] ParentIdBytes = Encoding.UTF8.GetBytes("parent_id");
         private static readonly byte[] NameBytes = Encoding.UTF8.GetBytes("name");
         private static readonly byte[] ResourceBytes = Encoding.UTF8.GetBytes("resource");
         private static readonly byte[] ServiceBytes = Encoding.UTF8.GetBytes("service");
         private static readonly byte[] TypeBytes = Encoding.UTF8.GetBytes("type");
         private static readonly byte[] StartBytes = Encoding.UTF8.GetBytes("start");
         private static readonly byte[] DurationBytes = Encoding.UTF8.GetBytes("duration");
-        private static readonly byte[] ParentIdBytes = Encoding.UTF8.GetBytes("parent_id");
         private static readonly byte[] ErrorBytes = Encoding.UTF8.GetBytes("error");
         private static readonly byte[] MetaBytes = Encoding.UTF8.GetBytes("meta");
-
         private static readonly byte[] MetricsBytes = Encoding.UTF8.GetBytes("metrics");
-        // private static readonly byte[] OriginBytes = Encoding.UTF8.GetBytes(Trace.Tags.Origin);
-        // private static readonly byte[] RuntimeIdBytes = Encoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
-        // private static readonly byte[] RuntimeIdValueBytes = Encoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         public void Serialize(ref MessagePackWriter writer, Span span, MessagePackSerializerOptions options)
         {
