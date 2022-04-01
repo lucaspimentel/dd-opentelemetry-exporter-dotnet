@@ -1,7 +1,16 @@
+using Datadog.OpenTelemetry.Exporter;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddOpenTelemetryTracing(otelBuilder => otelBuilder.AddAspNetCoreInstrumentation()
+                                                                   .AddHttpClientInstrumentation()
+                                                                   .AddConsoleExporter()
+                                                                   .AddDatadogExporter());
 
 var app = builder.Build();
 
