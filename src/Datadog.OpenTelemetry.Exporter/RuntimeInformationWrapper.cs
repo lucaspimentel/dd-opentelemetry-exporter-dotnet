@@ -45,7 +45,7 @@ namespace Datadog.OpenTelemetry.Exporter
 
         private static string GetProductVersion()
         {
-            return (Name == ".NET Framework" ? GetNetFrameworkVersion() : GetNetCoreVersion()) ?? string.Empty;
+            return (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Name == ".NET Framework" ? GetNetFrameworkVersion() : GetNetCoreVersion()) ?? string.Empty;
         }
 
         private static string GetOsName()
@@ -70,6 +70,11 @@ namespace Datadog.OpenTelemetry.Exporter
 
         private static string? GetNetFrameworkVersion()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return null;
+            }
+
             string? productVersion = null;
 
             try
@@ -89,7 +94,7 @@ namespace Datadog.OpenTelemetry.Exporter
                     productVersion = DotNetFrameworkVersionMapping.FirstOrDefault(t => release >= t.Item1)?.Item2;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Log.ErrorException("Error getting .NET Framework version from Windows Registry", e);
             }
@@ -119,7 +124,7 @@ namespace Datadog.OpenTelemetry.Exporter
             {
                 // try to get product version from assembly path
                 Match match = Regex.Match(
-                    RootAssembly.CodeBase,
+                    RootAssembly.Location,
                     @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
                     RegexOptions.IgnoreCase);
 

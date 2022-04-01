@@ -24,12 +24,11 @@ namespace Datadog.OpenTelemetry.Exporter
                                   Process.GetCurrentProcess().ProcessName;
         }
 
-        /*
         protected override bool OnShutdown(int timeoutMilliseconds)
         {
+            _writer.RequestStop();
             return base.OnShutdown(timeoutMilliseconds);
         }
-        */
 
         public override ExportResult Export(in Batch<Activity> batch)
         {
@@ -61,7 +60,7 @@ namespace Datadog.OpenTelemetry.Exporter
                            SpanId = ConversionHelper.ToUInt64(activity.SpanId),
                            TraceId = ConversionHelper.ToUInt64(activity.TraceId),
                            ParentSpanId = ConversionHelper.ToUInt64(activity.ParentSpanId),
-                           // Type = "custom",
+                           Type = "custom",
                            ServiceName = _defaultServiceName,
                            OperationName = activity.OperationName,
                            StartTime = activity.StartTimeUtc,
@@ -89,9 +88,9 @@ namespace Datadog.OpenTelemetry.Exporter
         {
             foreach (var tag in activity.Tags)
             {
-                if (tag.Key == "http.url" && tag.Value?.StartsWith(_options.BaseEndpoint) == true)
+                if (tag.Key == "http.url")
                 {
-                    return false;
+                    return tag.Value == null || !tag.Value.StartsWith(_options.BaseEndpoint, StringComparison.OrdinalIgnoreCase);
                 }
             }
 

@@ -10,14 +10,15 @@ namespace Datadog.OpenTelemetry.Exporter
         private readonly TraceAgentClient _client;
         private readonly Task _loopTask;
 
-        private ConcurrentBag<Span> _spans = new();
+        private ConcurrentBag<Span> _frontBuffer = new();
+        private ConcurrentBag<Span> _backBuffer = new();
         private bool _enabled;
 
         public SpanWriter(TraceAgentClient client)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _enabled = true;
-            _loopTask = Task.Run(StartAsync);
+            _loopTask = Task.Factory.StartNew(async () => await StartAsync().ConfigureAwait(false), TaskCreationOptions.LongRunning);
         }
 
         private async Task StartAsync()
@@ -27,24 +28,32 @@ namespace Datadog.OpenTelemetry.Exporter
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
                 // switch the queued spans with a new empty collection
-                ConcurrentBag<Span> spans = Interlocked.Exchange(ref _spans, new ConcurrentBag<Span>());
+                _backBuffer.Clear();
+                var spans = Interlocked.Exchange(ref _frontBuffer, _backBuffer);
+                _backBuffer = spans;
 
                 if (!spans.IsEmpty)
                 {
                     await _client.SendTracesAsync(spans).ConfigureAwait(false);
+                    spans.Clear();
                 }
             }
         }
 
         public void Add(Span span)
         {
-            _spans.Add(span);
+            _frontBuffer.Add(span);
+        }
+
+        public void RequestStop()
+        {
+            _enabled = false;
         }
 
         public async Task StopAsync()
         {
             _enabled = false;
-            await _loopTask;
+            await _loopTask.ConfigureAwait(false);
         }
     }
 }
