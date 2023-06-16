@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="2.3.85" />
-    <PackageReference Include="OpenTelemetry" Version="1.1.0" />
+    <PackageReference Include="MessagePack" Version="2.5.108" />
+    <PackageReference Include="OpenTelemetry" Version="1.5.0" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
 
