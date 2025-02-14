@@ -39,6 +39,7 @@ public static class DatadogExporterHelperExtensions
         Action<DatadogExporterOptions>? configure = null)
     {
         configure?.Invoke(options);
+        //return builder.AddProcessor(new BatchActivityExportProcessor(new DatadogSpanExporter(options)));
         return builder.AddProcessor(new SimpleActivityExportProcessor(new DatadogSpanExporter(options)));
     }
 }
