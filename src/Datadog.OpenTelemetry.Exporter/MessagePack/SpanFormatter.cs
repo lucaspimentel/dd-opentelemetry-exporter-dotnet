@@ -15,30 +15,12 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
 {
     internal class SpanFormatter : IMessagePackFormatter<Span>
     {
-        // top-level spans fields
-        private readonly byte[] _traceIdBytes = Encoding.UTF8.GetBytes("trace_id");
-        private readonly byte[] _spanIdBytes = Encoding.UTF8.GetBytes("span_id");
-        private readonly byte[] _parentIdBytes = Encoding.UTF8.GetBytes("parent_id");
-        private readonly byte[] _nameBytes = Encoding.UTF8.GetBytes("name");
-        private readonly byte[] _resourceBytes = Encoding.UTF8.GetBytes("resource");
-        private readonly byte[] _serviceBytes = Encoding.UTF8.GetBytes("service");
-        private readonly byte[] _typeBytes = Encoding.UTF8.GetBytes("type");
-        private readonly byte[] _startBytes = Encoding.UTF8.GetBytes("start");
-        private readonly byte[] _durationBytes = Encoding.UTF8.GetBytes("duration");
-        private readonly byte[] _errorBytes = Encoding.UTF8.GetBytes("error");
-        private readonly byte[] _metaBytes = Encoding.UTF8.GetBytes("meta");
-        private readonly byte[] _metricsBytes = Encoding.UTF8.GetBytes("metrics");
-
-        // special tags: process id
-        private readonly byte[] _processIdNameBytes = Encoding.UTF8.GetBytes("process_id");
         private readonly int _processIdValue;
 
         public SpanFormatter()
         {
-            using (var process = Process.GetCurrentProcess())
-            {
-                _processIdValue = process.Id;
-            }
+            using var process = Process.GetCurrentProcess();
+            _processIdValue = process.Id;
         }
 
         public void Serialize(ref MessagePackWriter writer, Span span, MessagePackSerializerOptions options)
@@ -57,44 +39,44 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
 
             writer.WriteMapHeader(len);
 
-            writer.WriteString(_traceIdBytes);
+            writer.WriteString("trace_id"u8);
             writer.WriteUInt64(span.TraceId);
 
-            writer.WriteString(_spanIdBytes);
+            writer.WriteString("span_id"u8);
             writer.WriteUInt64(span.SpanId);
 
-            writer.WriteString(_nameBytes);
+            writer.WriteString("name"u8);
             writer.Write(span.OperationName);
 
-            writer.WriteString(_resourceBytes);
+            writer.WriteString("resource"u8);
             writer.Write(span.ResourceName);
 
-            writer.WriteString(_serviceBytes);
+            writer.WriteString("service"u8);
             writer.Write(span.ServiceName);
 
-            writer.WriteString(_typeBytes);
+            writer.WriteString("type"u8);
             writer.Write(span.Type);
 
-            writer.WriteString(_startBytes);
+            writer.WriteString("start"u8);
             writer.WriteInt64(ConversionHelper.ToUnixTimeNanoseconds(span.StartTime));
 
-            writer.WriteString(_durationBytes);
+            writer.WriteString("duration"u8);
             writer.WriteInt64(ConversionHelper.ToNanoseconds(span.Duration));
 
             if (span.ParentSpanId != null)
             {
-                writer.WriteString(_parentIdBytes);
+                writer.WriteString("parent_id"u8);
                 writer.WriteUInt64((ulong)span.ParentSpanId);
             }
 
             if (span.Error)
             {
-                writer.WriteString(_errorBytes);
+                writer.WriteString("error"u8);
                 writer.WriteInt32(1);
             }
 
             // start string tags ("meta")
-            writer.WriteString(_metaBytes);
+            writer.WriteString("meta"u8);
             writer.WriteMapHeader(span.Meta.Count + 1);
 
             foreach (KeyValuePair<string, string> meta in span.Meta)
@@ -104,11 +86,11 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
             }
 
             // special tags: process id
-            writer.WriteString(_processIdNameBytes);
+            writer.WriteString("process_id"u8);
             writer.Write(_processIdValue);
 
             // start numeric tags ("metrics")
-            writer.WriteString(_metricsBytes);
+            writer.WriteString("metrics"u8);
             writer.WriteMapHeader(span.Metrics.Count);
 
             foreach (KeyValuePair<string, double> metric in span.Metrics)

@@ -16,10 +16,7 @@ public static class DatadogExporterHelperExtensions
     /// <returns>The instance of <see cref="TracerProviderBuilder"/> to chain the calls.</returns>
     public static TracerProviderBuilder AddDatadogExporter(this TracerProviderBuilder builder, Action<DatadogExporterOptions>? configure = null)
     {
-        if (builder == null)
-        {
-            throw new ArgumentNullException(nameof(builder));
-        }
+        ArgumentNullException.ThrowIfNull(builder);
 
         if (builder is IDeferredTracerProviderBuilder deferredBuilder)
         {

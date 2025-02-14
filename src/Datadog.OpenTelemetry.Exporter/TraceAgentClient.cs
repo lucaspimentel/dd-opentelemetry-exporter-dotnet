@@ -35,25 +35,21 @@ namespace Datadog.OpenTelemetry.Exporter
 
         public async Task SendTracesAsync(IEnumerable<Span> spans)
         {
-            if (spans == null)
-            {
-                throw new ArgumentNullException(nameof(spans));
-            }
+            ArgumentNullException.ThrowIfNull(spans);
 
             var traces = (from span in spans
                           group span by span.TraceId
                           into g
                           select g.ToList()).ToList();
 
-            byte[] bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
+            var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
 
-            using (HttpContent content = new ByteArrayContent(bytes))
-            {
-                content.Headers.ContentType = _mediaTypeHeaderValue;
-                content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
-                HttpResponseMessage responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-                responseMessage.EnsureSuccessStatusCode();
-            }
+            using HttpContent content = new ByteArrayContent(bytes);
+            content.Headers.ContentType = _mediaTypeHeaderValue;
+            content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
+
+            using var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+            responseMessage.EnsureSuccessStatusCode();
         }
     }
 }

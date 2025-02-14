@@ -10,8 +10,8 @@ namespace Datadog.OpenTelemetry.Exporter
         private readonly TraceAgentClient _client;
         private readonly Task _loopTask;
 
-        private ConcurrentBag<Span> _frontBuffer = new();
-        private ConcurrentBag<Span> _backBuffer = new();
+        private ConcurrentBag<Span> _frontBuffer = [];
+        private ConcurrentBag<Span> _backBuffer = [];
         private bool _enabled;
 
         public SpanWriter(TraceAgentClient client)
