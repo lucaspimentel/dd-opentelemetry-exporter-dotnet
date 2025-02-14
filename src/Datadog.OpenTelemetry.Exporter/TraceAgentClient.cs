@@ -37,10 +37,12 @@ namespace Datadog.OpenTelemetry.Exporter
         {
             ArgumentNullException.ThrowIfNull(spans);
 
-            var traces = (from span in spans
-                          group span by span.TraceId
-                          into g
-                          select g.ToList()).ToList();
+            var traces = spans.GroupBy(span => span.TraceId).Select(g => g.ToList()).ToList();
+
+            if (traces.Count == 0)
+            {
+                return;
+            }
 
             var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
 

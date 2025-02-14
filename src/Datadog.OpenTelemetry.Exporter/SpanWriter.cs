@@ -29,8 +29,7 @@ namespace Datadog.OpenTelemetry.Exporter
 
                 // switch the queued spans with a new empty collection
                 _backBuffer.Clear();
-                var spans = Interlocked.Exchange(ref _frontBuffer, _backBuffer);
-                _backBuffer = spans;
+                var spans = _backBuffer = Interlocked.Exchange(ref _frontBuffer, _backBuffer);
 
                 if (!spans.IsEmpty)
                 {
