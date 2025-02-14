@@ -73,7 +73,7 @@ internal class SpanFormatter : IMessagePackFormatter<Span?>
 
         // start string tags ("meta")
         writer.WriteString("meta"u8);
-        writer.WriteMapHeader(span.Meta.Count + 1);
+        writer.WriteMapHeader(span.Meta.Count);
 
         foreach (KeyValuePair<string, string> meta in span.Meta)
         {
@@ -81,19 +81,19 @@ internal class SpanFormatter : IMessagePackFormatter<Span?>
             writer.Write(meta.Value);
         }
 
-        // special tags: process id
-        writer.WriteString("process_id"u8);
-        writer.Write(ProcessHelper.ProcessId);
-
         // start numeric tags ("metrics")
         writer.WriteString("metrics"u8);
-        writer.WriteMapHeader(span.Metrics.Count);
+        writer.WriteMapHeader(span.Metrics.Count + 1);
 
         foreach (KeyValuePair<string, double> metric in span.Metrics)
         {
             writer.Write(metric.Key);
             writer.Write(metric.Value);
         }
+
+        // special tag: process id
+        writer.WriteString("process_id"u8);
+        writer.Write((double)ProcessHelper.ProcessId);
     }
 
     public Span Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
