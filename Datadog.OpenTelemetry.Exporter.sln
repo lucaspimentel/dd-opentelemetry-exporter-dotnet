@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{2103
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.OpenTelemetry.Exporter", "src\Datadog.OpenTelemetry.Exporter\Datadog.OpenTelemetry.Exporter.csproj", "{0275AD06-2C84-4B06-B1C1-9EB7A6BCCEBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreMvc60", "samples\AspNetCoreMvc60\AspNetCoreMvc60.csproj", "{AA3A6889-8259-4F75-957B-9CD9764455E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreMvc", "samples\AspNetCoreMvc\AspNetCoreMvc.csproj", "{AA3A6889-8259-4F75-957B-9CD9764455E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
