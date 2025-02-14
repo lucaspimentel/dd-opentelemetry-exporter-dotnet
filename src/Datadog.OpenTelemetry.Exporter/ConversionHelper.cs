@@ -20,11 +20,12 @@ namespace Datadog.OpenTelemetry.Exporter
             return ts.Ticks * TimeConstants.NanoSecondsPerTick;
         }
 
-        public static ulong ToUInt64(ActivityTraceId activityTraceId)
+        public static unsafe void ToUInt64(ActivityTraceId activityTraceId, out ulong upper, out ulong lower)
         {
-            var traceIdBytes = new byte[16];
+            Span<byte> traceIdBytes = stackalloc byte[16];
             activityTraceId.CopyTo(traceIdBytes);
-            return BitConverter.ToUInt64(traceIdBytes, 8);
+            upper = BitConverter.ToUInt64(traceIdBytes[..8]);
+            lower = BitConverter.ToUInt64(traceIdBytes[8..]);
         }
 
         public static ulong ToUInt64(ActivitySpanId activitySpanId)

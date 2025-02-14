@@ -55,20 +55,23 @@ namespace Datadog.OpenTelemetry.Exporter
 
         private Span ConvertToSpan(Activity activity)
         {
+            ConversionHelper.ToUInt64(activity.TraceId, out var upper, out var lower);
+
             var span = new Span
                        {
                            SpanId = ConversionHelper.ToUInt64(activity.SpanId),
-                           TraceId = ConversionHelper.ToUInt64(activity.TraceId),
+                           TraceId = lower,
                            ParentSpanId = ConversionHelper.ToUInt64(activity.ParentSpanId),
                            Type = "custom",
                            ServiceName = _defaultServiceName,
                            OperationName = activity.OperationName,
                            StartTime = activity.StartTimeUtc,
                            Duration = activity.Duration,
-                           Error = activity.GetStatus() == Status.Error,
+                           Error = activity.Status == ActivityStatusCode.Error,
                            Meta =
                            {
-                               ["span.kind"] = activity.Kind.ToString().ToLowerInvariant()
+                               ["span.kind"] = activity.Kind.ToString().ToLowerInvariant(),
+                               ["_dd.p.tid"] = upper.ToString("x16")
                            }
                        };
 
