@@ -86,7 +86,7 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
     {
         foreach (var tag in activity.Tags)
         {
-            if (tag.Key == "http.url")
+            if (tag.Key == "url.full")
             {
                 return tag.Value == null || !tag.Value.StartsWith(_options.BaseEndpoint, StringComparison.OrdinalIgnoreCase);
             }
