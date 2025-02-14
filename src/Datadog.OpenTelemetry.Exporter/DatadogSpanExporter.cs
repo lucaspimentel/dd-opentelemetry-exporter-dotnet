@@ -31,11 +31,11 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
 
         try
         {
-            foreach (Activity activity in batch)
+            foreach (var activity in batch)
             {
                 if (ShouldExport(activity))
                 {
-                    Span span = ConvertToSpan(activity);
+                    var span = ConvertToSpan(activity);
                     _writer.Add(span);
                 }
             }
