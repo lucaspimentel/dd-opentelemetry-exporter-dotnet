@@ -8,50 +8,49 @@ using System.Threading.Tasks;
 using Datadog.OpenTelemetry.Exporter.MessagePack;
 using MessagePack;
 
-namespace Datadog.OpenTelemetry.Exporter
+namespace Datadog.OpenTelemetry.Exporter;
+
+public class TraceAgentClient
 {
-    public class TraceAgentClient
+    private static readonly string RuntimeVersion = Environment.Version.ToString();
+    private const string TracesPath = "/v0.4/traces";
+
+    private readonly MessagePackSerializerOptions? _serializerOptions = MessagePackSerializerOptions.Standard
+                                                                                                    .WithResolver(SpanFormatterResolver.Instance)
+                                                                                                    .WithOmitAssemblyVersion(true);
+
+    private readonly MediaTypeHeaderValue _mediaTypeHeaderValue = new("application/msgpack");
+    private readonly Uri _tracesEndpoint;
+    private readonly HttpClient _client;
+
+    public TraceAgentClient(string baseEndpoint)
     {
-        private static readonly string RuntimeVersion = Environment.Version.ToString();
-        private const string TracesPath = "/v0.4/traces";
+        _tracesEndpoint = new Uri(new Uri(baseEndpoint), TracesPath);
 
-        private readonly MessagePackSerializerOptions? _serializerOptions = MessagePackSerializerOptions.Standard
-                                                                                                        .WithResolver(SpanFormatterResolver.Instance)
-                                                                                                        .WithOmitAssemblyVersion(true);
+        _client = new HttpClient();
+        _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, "dotnet");
+        _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, ".NET");
+        _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, RuntimeVersion);
+    }
 
-        private readonly MediaTypeHeaderValue _mediaTypeHeaderValue = new("application/msgpack");
-        private readonly Uri _tracesEndpoint;
-        private readonly HttpClient _client;
+    public async Task SendTracesAsync(IEnumerable<Span> spans)
+    {
+        ArgumentNullException.ThrowIfNull(spans);
 
-        public TraceAgentClient(string baseEndpoint)
+        var traces = spans.GroupBy(span => span.TraceId).Select(g => g.ToList()).ToList();
+
+        if (traces.Count == 0)
         {
-            _tracesEndpoint = new Uri(new Uri(baseEndpoint), TracesPath);
-
-            _client = new HttpClient();
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, "dotnet");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, RuntimeVersion);
+            return;
         }
 
-        public async Task SendTracesAsync(IEnumerable<Span> spans)
-        {
-            ArgumentNullException.ThrowIfNull(spans);
+        var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
 
-            var traces = spans.GroupBy(span => span.TraceId).Select(g => g.ToList()).ToList();
+        using HttpContent content = new ByteArrayContent(bytes);
+        content.Headers.ContentType = _mediaTypeHeaderValue;
+        content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
 
-            if (traces.Count == 0)
-            {
-                return;
-            }
-
-            var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
-
-            using HttpContent content = new ByteArrayContent(bytes);
-            content.Headers.ContentType = _mediaTypeHeaderValue;
-            content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
-
-            using var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-            responseMessage.EnsureSuccessStatusCode();
-        }
+        using var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+        responseMessage.EnsureSuccessStatusCode();
     }
 }

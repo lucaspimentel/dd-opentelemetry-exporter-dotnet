@@ -7,26 +7,25 @@ using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
 
-namespace Datadog.OpenTelemetry.Exporter.MessagePack
+namespace Datadog.OpenTelemetry.Exporter.MessagePack;
+
+internal class SpanFormatterResolver : IFormatterResolver
 {
-    internal class SpanFormatterResolver : IFormatterResolver
+    public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
+
+    private static readonly IMessagePackFormatter<Span?> Formatter = new SpanFormatter();
+
+    private SpanFormatterResolver()
     {
-        public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
+    }
 
-        private static readonly IMessagePackFormatter<Span?> Formatter = new SpanFormatter();
-
-        private SpanFormatterResolver()
+    public IMessagePackFormatter<T>? GetFormatter<T>()
+    {
+        if (typeof(T) == typeof(Span))
         {
+            return (IMessagePackFormatter<T>)Formatter;
         }
 
-        public IMessagePackFormatter<T>? GetFormatter<T>()
-        {
-            if (typeof(T) == typeof(Span))
-            {
-                return (IMessagePackFormatter<T>)Formatter;
-            }
-
-            return StandardResolver.Instance.GetFormatter<T>();
-        }
+        return StandardResolver.Instance.GetFormatter<T>();
     }
 }
