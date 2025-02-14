@@ -14,24 +14,29 @@ public static class DatadogExporterHelperExtensions
     /// <param name="builder"><see cref="TracerProviderBuilder"/> builder to use.</param>
     /// <param name="configure">Exporter configuration options.</param>
     /// <returns>The instance of <see cref="TracerProviderBuilder"/> to chain the calls.</returns>
-    public static TracerProviderBuilder AddDatadogExporter(this TracerProviderBuilder builder, Action<DatadogExporterOptions>? configure = null)
+    public static TracerProviderBuilder AddDatadogExporter(
+        this TracerProviderBuilder builder,
+        Action<DatadogExporterOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         if (builder is IDeferredTracerProviderBuilder deferredBuilder)
         {
             return deferredBuilder.Configure((sp, b) =>
-                                             {
-                                                 var options = sp.GetService<IOptions<DatadogExporterOptions>>();
-                                                 var ddOptions = options?.Value ?? new DatadogExporterOptions();
-                                                 AddDatadogExporter(b, ddOptions, configure);
-                                             });
+            {
+                var options = sp.GetService<IOptions<DatadogExporterOptions>>();
+                var ddOptions = options?.Value ?? new DatadogExporterOptions();
+                AddDatadogExporter(b, ddOptions, configure);
+            });
         }
 
         return AddDatadogExporter(builder, new DatadogExporterOptions(), configure);
     }
 
-    private static TracerProviderBuilder AddDatadogExporter(TracerProviderBuilder builder, DatadogExporterOptions options, Action<DatadogExporterOptions>? configure = null)
+    private static TracerProviderBuilder AddDatadogExporter(
+        TracerProviderBuilder builder,
+        DatadogExporterOptions options,
+        Action<DatadogExporterOptions>? configure = null)
     {
         configure?.Invoke(options);
         return builder.AddProcessor(new SimpleActivityExportProcessor(new DatadogSpanExporter(options)));

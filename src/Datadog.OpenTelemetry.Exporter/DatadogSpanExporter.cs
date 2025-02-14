@@ -18,8 +18,7 @@ namespace Datadog.OpenTelemetry.Exporter
             var client = new TraceAgentClient(options.BaseEndpoint);
             _writer = new SpanWriter(client);
 
-            _defaultServiceName = options.ServiceName ??
-                                  ProcessHelper.ProcessName;
+            _defaultServiceName = options.ServiceName ?? ProcessHelper.ProcessName;
         }
 
         protected override bool OnShutdown(int timeoutMilliseconds)
