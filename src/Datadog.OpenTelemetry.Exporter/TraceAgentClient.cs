@@ -12,14 +12,14 @@ namespace Datadog.OpenTelemetry.Exporter;
 
 public class TraceAgentClient
 {
-    private static readonly string RuntimeVersion = Environment.Version.ToString();
     private const string TracesPath = "/v0.4/traces";
+    private static readonly string RuntimeVersion = Environment.Version.ToString();
+    private static readonly MediaTypeHeaderValue MediaTypeHeaderValue = new("application/msgpack");
 
     private readonly MessagePackSerializerOptions? _serializerOptions = MessagePackSerializerOptions.Standard
                                                                                                     .WithResolver(SpanFormatterResolver.Instance)
                                                                                                     .WithOmitAssemblyVersion(true);
 
-    private readonly MediaTypeHeaderValue _mediaTypeHeaderValue = new("application/msgpack");
     private readonly Uri _tracesEndpoint;
     private readonly HttpClient _client;
 
@@ -47,7 +47,7 @@ public class TraceAgentClient
         var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
 
         using HttpContent content = new ByteArrayContent(bytes);
-        content.Headers.ContentType = _mediaTypeHeaderValue;
+        content.Headers.ContentType = MediaTypeHeaderValue;
         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
 
         using var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
