@@ -19,9 +19,7 @@ namespace Datadog.OpenTelemetry.Exporter
             _writer = new SpanWriter(client);
 
             _defaultServiceName = options.ServiceName ??
-                                  // TODO: ASP.NET / IIS application name
-                                  Assembly.GetEntryAssembly()?.GetName().Name ??
-                                  Process.GetCurrentProcess().ProcessName;
+                                  ProcessHelper.ProcessName;
         }
 
         protected override bool OnShutdown(int timeoutMilliseconds)

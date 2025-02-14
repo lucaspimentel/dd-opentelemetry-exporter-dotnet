@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using MessagePack;
 using MessagePack.Formatters;
 
@@ -14,14 +13,6 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
 {
     internal class SpanFormatter : IMessagePackFormatter<Span?>
     {
-        private readonly int _processIdValue;
-
-        public SpanFormatter()
-        {
-            using var process = Process.GetCurrentProcess();
-            _processIdValue = process.Id;
-        }
-
         public void Serialize(ref MessagePackWriter writer, Span? span, MessagePackSerializerOptions options)
         {
             if (span is null)
@@ -92,7 +83,7 @@ namespace Datadog.OpenTelemetry.Exporter.MessagePack
 
             // special tags: process id
             writer.WriteString("process_id"u8);
-            writer.Write(_processIdValue);
+            writer.Write(ProcessHelper.ProcessId);
 
             // start numeric tags ("metrics")
             writer.WriteString("metrics"u8);
