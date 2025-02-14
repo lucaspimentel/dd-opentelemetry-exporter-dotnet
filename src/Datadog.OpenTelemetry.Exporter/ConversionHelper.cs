@@ -30,8 +30,8 @@ internal static class ConversionHelper
 
     public static ulong ToUInt64(ActivitySpanId activitySpanId)
     {
-        var spanIdBytes = new byte[8];
+        Span<byte> spanIdBytes = stackalloc byte[8];
         activitySpanId.CopyTo(spanIdBytes);
-        return BitConverter.ToUInt64(spanIdBytes, 0);
+        return BitConverter.ToUInt64(spanIdBytes);
     }
 }
