@@ -60,6 +60,7 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
             Type = "custom",
             ServiceName = _defaultServiceName,
             OperationName = activity.OperationName,
+            ResourceName = activity.DisplayName,
             StartTime = activity.StartTimeUtc,
             Duration = activity.Duration,
             Error = activity.Status == ActivityStatusCode.Error,
@@ -78,7 +79,6 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
             }
         }
 
-        span.ResourceName = $"{span.Meta["http.method"]} {activity.DisplayName}";
         return span;
     }
 
