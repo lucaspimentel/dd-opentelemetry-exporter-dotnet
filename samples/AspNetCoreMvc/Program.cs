@@ -1,5 +1,4 @@
 using Datadog.OpenTelemetry.Exporter;
-using OpenTelemetry;
 using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
