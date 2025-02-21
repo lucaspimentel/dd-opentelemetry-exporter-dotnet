@@ -67,6 +67,7 @@ public class TraceAgentClient
     {
         ArgumentNullException.ThrowIfNull(spans);
 
+        // TODO: avoid LINQ
         var traces = spans.GroupBy(span => span.TraceId).Select(g => g.ToList()).ToList();
 
         if (traces.Count == 0)
@@ -74,6 +75,7 @@ public class TraceAgentClient
             return;
         }
 
+        // TODO: reuse buffer
         var bytes = MessagePackSerializer.Serialize(traces, _serializerOptions);
 
         using HttpContent content = new ByteArrayContent(bytes);
