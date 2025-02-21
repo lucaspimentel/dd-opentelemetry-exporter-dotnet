@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Datadog.OpenTelemetry.Exporter;
+namespace Datadog.OpenTelemetry.Exporter.Util;
 
 internal static class ProcessHelper
 {

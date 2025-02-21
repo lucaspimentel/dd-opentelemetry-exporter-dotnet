@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Datadog.OpenTelemetry.Exporter.Util;
 using OpenTelemetry;
 
 namespace Datadog.OpenTelemetry.Exporter;

@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.OpenTelemetry.Exporter.Util;
 using MessagePack;
 using MessagePack.Formatters;
 

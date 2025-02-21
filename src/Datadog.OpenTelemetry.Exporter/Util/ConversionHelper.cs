@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.OpenTelemetry.Exporter;
+namespace Datadog.OpenTelemetry.Exporter.Util;
 
 internal static class ConversionHelper
 {
