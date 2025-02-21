@@ -5,6 +5,10 @@ namespace Datadog.OpenTelemetry.Exporter.Util;
 
 internal static class ConversionHelper
 {
+    private const long NanoSecondsPerTick = 1000000 / TimeSpan.TicksPerMillisecond;
+
+    private const long UnixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
+
     /// <summary>
     /// Returns the number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.
     /// </summary>
@@ -12,12 +16,12 @@ internal static class ConversionHelper
     /// <returns>The number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.</returns>
     public static long ToUnixTimeNanoseconds(DateTimeOffset dateTimeOffset)
     {
-        return (dateTimeOffset.Ticks - TimeConstants.UnixEpochInTicks) * TimeConstants.NanoSecondsPerTick;
+        return (dateTimeOffset.Ticks - UnixEpochInTicks) * NanoSecondsPerTick;
     }
 
     public static long ToNanoseconds(TimeSpan ts)
     {
-        return ts.Ticks * TimeConstants.NanoSecondsPerTick;
+        return ts.Ticks * NanoSecondsPerTick;
     }
 
     public static unsafe void ToUInt64(ActivityTraceId activityTraceId, out ulong upper, out ulong lower)
