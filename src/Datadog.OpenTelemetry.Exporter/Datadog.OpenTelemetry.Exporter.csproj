@@ -5,11 +5,31 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- nuget -->
+    <PackageId>LucasP.Datadog.OpenTelemetry.Exporter</PackageId>
+    <Version>0.0.1-alpha</Version>
+    <Authors>Lucas Pimentel</Authors>
+    <Copyright>Copyright (c) Lucas Pimentel 2025</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!--
+    <Company>Datadog</Company>
+    <RepositoryUrl>https://github.com/lucaspimentel/dd-opentelemetry-exporter-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    -->
+
+    <!-- SourceLink -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="3.1.3" />
     <PackageReference Include="OpenTelemetry" Version="1.11.1" />
+
+    <None Include="..\..\docs\readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
