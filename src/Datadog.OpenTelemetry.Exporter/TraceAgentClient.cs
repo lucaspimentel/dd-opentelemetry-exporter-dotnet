@@ -58,7 +58,7 @@ public class TraceAgentClient
         _tracesEndpoint = new Uri(new Uri(baseEndpoint), TracesPath);
 
         _client = new HttpClient();
-        _client.DefaultRequestHeaders.Add(Headers.Language, "dotnet");
+        _client.DefaultRequestHeaders.Add(Headers.Language, ".NET");
         _client.DefaultRequestHeaders.Add(Headers.LanguageInterpreter, ".NET");
         _client.DefaultRequestHeaders.Add(Headers.LanguageVersion, RuntimeVersion);
     }
