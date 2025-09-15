@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="9.0.9" />
         <ProjectReference Include="..\..\src\Datadog.OpenTelemetry.Exporter\Datadog.OpenTelemetry.Exporter.csproj" />
     </ItemGroup>
 
