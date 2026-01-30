@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Datadog.OpenTelemetry.Exporter.Util;
 using OpenTelemetry;
 
@@ -8,16 +11,16 @@ namespace Datadog.OpenTelemetry.Exporter;
 public sealed class DatadogSpanExporter : BaseExporter<Activity>
 {
     private readonly DatadogExporterOptions _options;
+    private readonly string? _serviceName;
     private readonly SpanWriter _writer;
-    private readonly string _defaultServiceName;
 
     public DatadogSpanExporter(DatadogExporterOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _serviceName = options.ServiceName;
+
         var client = new TraceAgentClient(options.BaseEndpoint);
         _writer = new SpanWriter(client);
-
-        _defaultServiceName = options.ServiceName ?? ProcessHelper.ProcessName;
     }
 
     protected override bool OnShutdown(int timeoutMilliseconds)
@@ -28,38 +31,40 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
 
     public override ExportResult Export(in Batch<Activity> batch)
     {
-        using var scope = SuppressInstrumentationScope.Begin();
+        Console.WriteLine("[Exporter] Exporting batch of {0:N0} spans", batch.Count);
+        var error = false;
 
-        try
+        foreach (var activity in batch)
         {
-            foreach (var activity in batch)
+            if (ShouldExport(activity))
             {
-                if (ShouldExport(activity))
+                try
                 {
                     var span = ConvertToSpan(activity);
                     _writer.Add(span);
                 }
+                catch (Exception e)
+                {
+                    error = true;
+                    Console.WriteLine("[Exporter] Error converting span: {0}", e);
+                }
             }
+        }
 
-            return ExportResult.Success;
-        }
-        catch
-        {
-            return ExportResult.Failure;
-        }
+        return error ? ExportResult.Failure : ExportResult.Success;
     }
 
     private Span ConvertToSpan(Activity activity)
     {
-        ConversionHelper.ToUInt64(activity.TraceId, out var upper, out var lower);
+        var (traceIdUpper, traceIdLower) = ConversionHelper.ToUInt64(activity.TraceId);
 
         var span = new Span
         {
+            TraceId = traceIdLower,
             SpanId = ConversionHelper.ToUInt64(activity.SpanId),
-            TraceId = lower,
             ParentSpanId = ConversionHelper.ToUInt64(activity.ParentSpanId),
-            Type = "custom",
-            ServiceName = _defaultServiceName,
+            Type = "serverless",
+            ServiceName = _serviceName,
             OperationName = activity.OperationName,
             ResourceName = activity.DisplayName,
             StartTime = activity.StartTimeUtc,
@@ -67,16 +72,43 @@ public sealed class DatadogSpanExporter : BaseExporter<Activity>
             Error = activity.Status == ActivityStatusCode.Error,
             Meta =
             {
+                ["_dd.p.tid"] = traceIdUpper.ToString("x16"),
                 ["span.kind"] = activity.Kind.ToString().ToLowerInvariant(),
-                ["_dd.p.tid"] = upper.ToString("x16")
+                ["activity_source"] = activity.Source.Name
             }
         };
 
-        foreach (var attribute in activity.Tags)
+        foreach (var (key, value) in activity.EnumerateTagObjects())
         {
-            if (attribute.Value != null)
+            switch (value)
             {
-                span.Meta[attribute.Key] = attribute.Value;
+                case string s:
+                    switch (key)
+                    {
+                        case "exception.type":
+                            span.Meta["error.type"] = s;
+                            break;
+                        case "exception.message":
+                            span.Meta["error.msg"] = s;
+                            break;
+                        case "exception.stacktrace":
+                            span.Meta["error.stack"] = s;
+                            break;
+                        default:
+                            span.Meta[key] = s;
+                            break;
+                    }
+
+                    break;
+                case int i:
+                    span.Metrics[key] = i;
+                    break;
+                case double d:
+                    span.Metrics[key] = d;
+                    break;
+                case bool b:
+                    span.Metrics[key] = b ? 1 : 0;
+                    break;
             }
         }
 

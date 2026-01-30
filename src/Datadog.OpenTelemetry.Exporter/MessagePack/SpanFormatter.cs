@@ -76,7 +76,7 @@ internal class SpanFormatter : IMessagePackFormatter<Span?>
         writer.WriteString("meta"u8);
         writer.WriteMapHeader(span.Meta.Count);
 
-        foreach (KeyValuePair<string, string> meta in span.Meta)
+        foreach (var meta in span.Meta)
         {
             writer.Write(meta.Key);
             writer.Write(meta.Value);
@@ -86,13 +86,13 @@ internal class SpanFormatter : IMessagePackFormatter<Span?>
         writer.WriteString("metrics"u8);
         writer.WriteMapHeader(span.Metrics.Count + 1);
 
-        foreach (KeyValuePair<string, double> metric in span.Metrics)
+        foreach (var metric in span.Metrics)
         {
             writer.Write(metric.Key);
             writer.Write(metric.Value);
         }
 
-        // special tag: process id
+        // special numeric tag: process id
         writer.WriteString("process_id"u8);
         writer.Write((double)ProcessHelper.ProcessId);
     }

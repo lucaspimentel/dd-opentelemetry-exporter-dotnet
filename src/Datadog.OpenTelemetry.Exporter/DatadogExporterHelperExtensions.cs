@@ -24,9 +24,8 @@ public static class DatadogExporterHelperExtensions
         {
             return deferredBuilder.Configure((sp, b) =>
             {
-                var options = sp.GetService<IOptions<DatadogExporterOptions>>();
-                var ddOptions = options?.Value ?? new DatadogExporterOptions();
-                AddDatadogExporter(b, ddOptions, configure);
+                var options = sp.GetService<IOptions<DatadogExporterOptions>>()?.Value ?? new DatadogExporterOptions();
+                AddDatadogExporter(b, options, configure);
             });
         }
 
@@ -38,8 +37,13 @@ public static class DatadogExporterHelperExtensions
         DatadogExporterOptions options,
         Action<DatadogExporterOptions>? configure = null)
     {
+        if (options.ServiceName is null && Environment.GetEnvironmentVariable("DD_SERVICE") is { } serviceName)
+        {
+            options.ServiceName = serviceName;
+        }
+
         configure?.Invoke(options);
-        //return builder.AddProcessor(new BatchActivityExportProcessor(new DatadogSpanExporter(options)));
-        return builder.AddProcessor(new SimpleActivityExportProcessor(new DatadogSpanExporter(options)));
+        return builder.AddProcessor(new BatchActivityExportProcessor(new DatadogSpanExporter(options)));
+        // return builder.AddProcessor(new SimpleActivityExportProcessor(new DatadogSpanExporter(options)));
     }
 }

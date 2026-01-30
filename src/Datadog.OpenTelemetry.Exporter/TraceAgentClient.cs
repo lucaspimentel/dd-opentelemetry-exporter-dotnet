@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.OpenTelemetry.Exporter.MessagePack;
 using MessagePack;
+using OpenTelemetry;
 
 namespace Datadog.OpenTelemetry.Exporter;
 
@@ -58,7 +59,7 @@ public class TraceAgentClient
         _tracesEndpoint = new Uri(new Uri(baseEndpoint), TracesPath);
 
         _client = new HttpClient();
-        _client.DefaultRequestHeaders.Add(Headers.Language, ".NET");
+        _client.DefaultRequestHeaders.Add(Headers.Language, "dotnet-opentelemetry-exporter");
         _client.DefaultRequestHeaders.Add(Headers.LanguageInterpreter, ".NET");
         _client.DefaultRequestHeaders.Add(Headers.LanguageVersion, RuntimeVersion);
     }
@@ -82,7 +83,31 @@ public class TraceAgentClient
         content.Headers.ContentType = MediaTypeHeaderValue;
         content.Headers.Add(Headers.TraceCount, traces.Count.ToString(CultureInfo.InvariantCulture));
 
-        using var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-        responseMessage.EnsureSuccessStatusCode();
+        var request = new HttpRequestMessage(HttpMethod.Post, _tracesEndpoint)
+        {
+            Content = content
+        };
+
+        // This tag will suppress the instrumentation of this specific request
+        // request.Options.Set(new HttpRequestOptionsKey<bool>("otel.instrumentation.suppress"), true);
+
+        using var scope = SuppressInstrumentationScope.Begin();
+
+        var spanCount = traces.Sum(t => t.Count);
+        Console.WriteLine($"[Exporter] Sending {traces.Count:N0} traces containing {spanCount:N0} spans total to {_tracesEndpoint}");
+
+        try
+        {
+
+            using var responseMessage = await _client.SendAsync(request).ConfigureAwait(false);
+            var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            Console.WriteLine($"[Exporter] Agent response: {responseMessage.StatusCode} {responseContent}");
+            responseMessage.EnsureSuccessStatusCode();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[Exporter] Failed to send traces: {e}");
+        }
     }
 }

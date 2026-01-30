@@ -24,12 +24,13 @@ internal static class ConversionHelper
         return ts.Ticks * NanoSecondsPerTick;
     }
 
-    public static unsafe void ToUInt64(ActivityTraceId activityTraceId, out ulong upper, out ulong lower)
+    public static unsafe (ulong upper, ulong lower) ToUInt64(ActivityTraceId activityTraceId)
     {
         Span<byte> traceIdBytes = stackalloc byte[16];
         activityTraceId.CopyTo(traceIdBytes);
-        upper = BitConverter.ToUInt64(traceIdBytes[..8]);
-        lower = BitConverter.ToUInt64(traceIdBytes[8..]);
+        var upper = BitConverter.ToUInt64(traceIdBytes[..8]);
+        var lower = BitConverter.ToUInt64(traceIdBytes[8..]);
+        return (upper, lower);
     }
 
     public static ulong ToUInt64(ActivitySpanId activitySpanId)

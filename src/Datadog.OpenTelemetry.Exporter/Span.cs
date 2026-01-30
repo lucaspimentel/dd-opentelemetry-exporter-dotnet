@@ -5,25 +5,25 @@ namespace Datadog.OpenTelemetry.Exporter;
 
 public class Span
 {
-    public ulong TraceId { get; set; }
+    public ulong TraceId { get; init; }
 
-    public ulong SpanId { get; set; }
+    public ulong SpanId { get; init; }
 
-    public ulong? ParentSpanId { get; set; }
+    public ulong? ParentSpanId { get; init; }
 
-    public DateTimeOffset StartTime { get; set; }
+    public DateTimeOffset StartTime { get; init; }
 
-    public TimeSpan Duration { get; set; }
+    public TimeSpan Duration { get; init; }
 
-    public string? OperationName { get; set; }
+    public string? OperationName { get; init; }
 
-    public string? ServiceName { get; set; }
+    public string? ServiceName { get; init; }
 
-    public string? ResourceName { get; set; }
+    public string? ResourceName { get; init; }
 
-    public string? Type { get; set; }
+    public string? Type { get; init; }
 
-    public bool Error { get; set; }
+    public bool Error { get; init; }
 
     public Dictionary<string, string> Meta { get; } = new();
 
