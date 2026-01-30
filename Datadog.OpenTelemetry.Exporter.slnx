@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/AspNetCoreMvc/AspNetCoreMvc.csproj" />
+    <Project Path="samples/WebApplication1/WebApplication1.csproj" />
+  </Folder>
+  <Project Path="src/Datadog.OpenTelemetry.Exporter/Datadog.OpenTelemetry.Exporter.csproj" />
+</Solution>
