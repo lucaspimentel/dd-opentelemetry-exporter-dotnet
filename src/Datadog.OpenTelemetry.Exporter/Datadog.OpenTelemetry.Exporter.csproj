@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="3.1.7" />
-    <PackageReference Include="OpenTelemetry" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry" Version="1.17.0" />
 
     <None Include="..\..\docs\readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
